@@ -1,0 +1,32 @@
+defaults:
+  - /model/vit
+  - /data/BPDataset
+  - /network/base_network
+  - _self_
+data:
+  train_dataset:
+    data_len: -1
+  val_dataset:
+    data_len: -1
+  test_dataset:
+    data_len: -1
+model:
+  emb_func:
+    _target_: src.models.simple_vit_1d.get_PatchEmbedding
+    patch_size: 125
+    in_channels: 1
+    emb_dim: ${..dim}
+    conv_overlap: 0
+network:
+  batch_size: 64
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 1e-4
+    weight_decay: 0
+  scheduler:
+    _target_: transformers.optimization.get_cosine_schedule_with_warmup
+  ckpt_path: checkpoints/resnet/0425_vit_2
+  early_stopping: 
+    patience: 2
+  resume: false
+

@@ -1,0 +1,12 @@
+_target_: src.models.simple_vit_1d.SimpleViT
+num_classes : 2
+dim : 64
+depth : 4
+heads : 4
+mlp_dim : 128
+emb_func :
+  _target_: src.models.simple_vit_1d.get_PatchEmbedding_Conv
+  patch_size : 125
+  in_channels : 1
+  emb_dim : ${..dim}
+  conv_overlap : 60

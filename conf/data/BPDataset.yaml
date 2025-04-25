@@ -1,19 +1,19 @@
 
 train_dataset:
-  _target_: dataset.BPDataset
+  _target_: src.dataset.BPDataset
   data_dir: "../../data/processed/BP_npy/PulseDB"
   cv: true
   train: true
   fold: -1
 val_dataset:
-  _target_: dataset.BPDataset
+  _target_: src.dataset.BPDataset
   # batch_size: 32
   data_dir: "../../data/processed/BP_npy/PulseDB"
   cv: true
   train: false
   fold: -1
 test_dataset:
-  _target_: dataset.BPDataset
+  _target_: src.dataset.BPDataset
   # batch_size: 32
   data_dir: "../../data/processed/BP_npy/PulseDB"
   cv: false

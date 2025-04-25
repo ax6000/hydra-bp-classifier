@@ -1,4 +1,4 @@
-from se_resnet1d import resnet18 as resnet
+from ..models.se_resnet1d import resnet18 as resnet
 from transformers import get_cosine_schedule_with_warmup
 import os
 import numpy as np
@@ -12,11 +12,11 @@ import wandb
 from sklearn.metrics import f1_score
 # from resnet1d import ResNet1D
 import pickle
-from hydra_utils import output_warning,compute_class_weights,EarlyStopping,update_if_exists
+from ..utils import output_warning,compute_class_weights,EarlyStopping,update_if_exists
 from hydra.utils import instantiate,call
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-
+from torchinfo import summary
 
 class BP_Logger(object):
     # 共通のロガー？
@@ -108,6 +108,8 @@ class BP_Trainer(object):
             print(class_weights)
 
             self.model = instantiate(self._model)
+            if f == 0:
+                summary(self.model, input_size=(self.batch_size, 1, 1250), device=self.device.type)
             self.optimizer = instantiate(self._optimizer,params=self.model.parameters())
             update_if_exists(self._scheduler,"num_training_steps",self.min_epochs * len(train_loader))
             update_if_exists(self._scheduler,"num_warmup_steps",self._scheduler.num_training_steps * 0.1)
