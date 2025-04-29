@@ -5,8 +5,8 @@ depth : 4
 heads : 4
 mlp_dim : 128
 emb_func :
-  _target_: src.models.simple_vit_1d.get_PatchEmbedding_Conv
+  _target_: src.models.simple_vit_1d.get_PatchEmbedding
   patch_size : 125
   in_channels : 1
   emb_dim : ${..dim}
-  conv_overlap : 60
+  overlap : 0

@@ -1,0 +1,39 @@
+program: main.py
+method: bayes
+metric:
+  goal: maximize
+  name: val_f1_fold
+parameters: 
+  _run.model._target_:
+    values: [src.models.se_resnet1d.resnet18mini, src.models.se_resnet1d.resnet18mini2,src.models.se_resnet1d.se_resnet18mini]
+  _run.model.first_layer_kernel_size:
+    values: [11,15,31,47,63]
+  _run.model.first_layer_channels:
+    values: [16,32,64]
+  _run.model.layer_size_multiplier:
+    values: [[0.5,1,1,2],[1,1,2,2],[1,2,2,4],[1,2,3,4]]
+  _run.network.optimizer._target_:
+    values: [torch.optim.Adam, torch.optim.Adam,torch.optim.SGD]
+  _run.network.optimizer.lr:
+    distribution: log_uniform_values
+    min: 1e-5
+    max: 1e-2
+  _run.network.optimizer.weight_decay:
+    distribution: log_uniform_values
+    min: 1e-6
+    max: 1e-3
+  # _run.network.optimizer.momentum:
+  #   distribution: uniform
+  #   min: 0.8
+  #   max: 0.99
+  _run.network.batch_size:
+    values: [64,128, 256]
+early_terminate:
+  type: hyperband
+  s: 2
+  eta: 3
+  max_iter: 27
+command:
+  - F:\minowa\BloodPressureEstimation\.venv\Scripts\python.exe
+  - ${program}
+  - ${args_no_hyphens}

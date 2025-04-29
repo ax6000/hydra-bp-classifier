@@ -83,10 +83,13 @@ class BP_Trainer(object):
         self.log_interval = self.config.network.log_interval
         self.min_epochs = self.config.network.min_epochs
         self.output_path = self.config.network.ckpt_path
+        self.log_add_step= 20000
         # self.init_weights=init_weights
     def train(self):
-        output_warning(self.config)
+        if not self.config.network.no_warning:
+            output_warning(self.config)
         data_dir = '../../data/processed/BP_npy/PulseDB'
+        step = 0
         for f in range(self.fold):
             fold_now = f
             train_dataset = instantiate(self._data.train_dataset,fold=fold_now,train=True)
@@ -119,8 +122,10 @@ class BP_Trainer(object):
             self.criterion = instantiate(self._criterion,weight=class_weights)
             self.earlystopping = instantiate(self._early_stopping)
             self.model.to(self.device)
-
+            wandb.log({"train_loss_step":0,
+                        "lr": 0},step=step-1)
             wandb.watch(self.model, log_freq=self.log_interval)
+            best_metric = float('-inf') 
             for epoch in range(self.epochs):
                 self.model.train()
                 running_loss = 0.0
@@ -139,13 +144,14 @@ class BP_Trainer(object):
                     # self.logger.log()
                     if batch_idx % self.log_interval == 0:
                         wandb.log({"train_loss_step": loss.item(),
-                                "lr": self.scheduler.get_last_lr()[0]})
+                                "lr": self.scheduler.get_last_lr()[0]},step=step)
                     # if batch_idx  == 0:
                         # wandb.log({"train/loss": log_img(gt,outputs)})
                     running_loss += loss.item()
                     # running_loss_mae += loss_mae.item()
                     train_loader_tqdm.set_postfix(loss=running_loss/(batch_idx+1))
-
+                    step += 1
+                
                 train_loss = running_loss / len(train_loader)
                 # train_loss_mae = running_loss_mae / len(train_loader)
 
@@ -164,7 +170,8 @@ class BP_Trainer(object):
                         loss = self.criterion(outputs,y) 
                         # loss_mae = mae(outputs, gt)
                         if batch_idx % self.log_interval == 0:
-                            wandb.log({"test_loss_step": loss.item()})
+                            # wandb.log({"test_loss_step": loss.item()})
+                            pass
                         # if batch_idx  == 0:
                         #     wandb.log({"val/loss": log_img(gt,outputs)})
                         val_loss += loss.item()
@@ -177,23 +184,47 @@ class BP_Trainer(object):
                 accuracy, class_accuracies, f1 = calculate_metrics(all_y_true, all_y_pred,classes=self.config.model.num_classes)
                 val_loss = val_loss / len(val_loader)
                 # WandBでのログ記録例
+                if epoch==0:
+                    wandb.log({
+                        "train_loss": 0,
+                        "val_loss": 0,
+                        "accuracy": 0,
+                        "f1_macro": 0,
+                        "epoch": 0
+                    },
+                    step=step-1)
                 wandb.log({
                     "train_loss": train_loss,
-                    "test_loss": val_loss,
+                    "val_loss": val_loss,
                     "accuracy": accuracy.item(),
                     "f1_macro": f1,
                     "conf_mat": wandb.plot.confusion_matrix(y_true=all_y_true, preds=all_y_pred, class_names=["0","1"]),
                     "epoch": epoch + 1
-                })
+                },
+                step=step)
+                best_metric = max(best_metric,f1)
                 # val_loss /= len(val_loader)
                 # val_loss_mae /= len(val_loader)
                 self.earlystopping(val_loss,self.model)
                 if self.earlystopping.early_stop:
                     print("Early Stopping!")
                     break
-                print(f"Epoch [{epoch + 1}/{self.epochs}]"
-                    f" Train Loss: {train_loss:.4f}"
-                    f" Val Loss: {val_loss:.4f}")
+            print(f"Epoch [{epoch + 1}/{self.epochs}]"
+                f" Train Loss: {train_loss:.4f}"
+                f" Val Loss: {val_loss:.4f}")
+            wandb.log({
+                "train_loss": 0,
+                "train_loss_step" : 0,
+                "lr":0,
+                "val_loss": 0,
+                "accuracy": 0,
+                "f1_macro": 0,
+                "epoch": 0
+            },
+            step=step+1)
+            step += self.log_add_step
+            wandb.log({"cv_fold":f+1,
+                "val_f1_fold":best_metric})
     def test(self):
         self.model = instantiate(self._model)
         checkpoint_dir =self.output_path

@@ -1,5 +1,6 @@
+# for sweep 
 defaults:
-  - /model/vit
+  - /model/resnet18
   - /data/BPDataset
   - /network/base_network
   - _self_
@@ -10,20 +11,22 @@ data:
     data_len: -1
   test_dataset:
     data_len: -1
+    
 model:
-  dim: 96
-  emb_func :
-    _target_: src.models.simple_vit_1d.get_PatchEmbedding_Conv
-    overlap : 60
+  _target_: src.models.se_resnet1d.se_resnet18mini
+  first_layer_channels: 64
+  layer_size_multiplier: [1, 1, 2, 4]
 network:
+  no_warning: True
   batch_size: 64
+  fold: 1
   optimizer:
     _target_: torch.optim.Adam
     lr: 1e-4
     weight_decay: 0
   scheduler:
     _target_: transformers.optimization.get_cosine_schedule_with_warmup
-  ckpt_path: checkpoints/resnet/0425_vit_4
+  ckpt_path: checkpoints/resnet/0429_sweep
   early_stopping: 
     patience: 4
   resume: false

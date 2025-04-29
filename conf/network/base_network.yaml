@@ -1,7 +1,7 @@
 batch_size: 64
-epochs: 100
+epochs: 30
 min_epochs: 10
-log_interval: 10
+log_interval: 50
 logger:
   _target_: src.modules.BPClassification.BP_Logger
 optimizer:

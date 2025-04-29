@@ -181,11 +181,21 @@ def resnet18(num_classes=1_000,**kwargs):
     model.avgpool = nn.AdaptiveAvgPool1d(1)
     return model
 
+def se_resnet18mini(num_classes=1_000,**kwargs):
+    """Constructs a ResNet-18 model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet1D_Small(SEBasicBlock, [2, 2, 2, 2], num_classes=num_classes,**kwargs)
+    model.avgpool = nn.AdaptiveAvgPool1d(1)
+    return model
+
 
 def resnet18mini(num_classes=1_000,**kwargs):
     """Constructs a ResNet-18 model.
     """
-    model = ResNet1D_Small(BasicBlock2, [2, 2, 2, 2], num_classes=num_classes,**kwargs)
+    model = ResNet1D_Small(BasicBlock, [2, 2, 2, 2], num_classes=num_classes,**kwargs)
     model.avgpool = nn.AdaptiveAvgPool1d(1)
     return model
 
@@ -685,6 +695,9 @@ class ResNet1D_Small(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         in_channels: int = 3,
         dropout: float = 0.5,
+        first_layer_kernel_size=7,
+        first_layer_channels=32,
+        layer_size_multiplier=[1,1,2,2]
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -692,7 +705,7 @@ class ResNet1D_Small(nn.Module):
             norm_layer = nn.BatchNorm1d
         self._norm_layer = norm_layer
 
-        self.inplanes = 32
+        self.inplanes = first_layer_channels
         self.dilation = 1
         if replace_stride_with_dilation is None:
             # each element in the tuple indicates if we should replace
@@ -705,17 +718,18 @@ class ResNet1D_Small(nn.Module):
             )
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv1d(in_channels, self.inplanes, kernel_size=64, stride=2, padding=3, bias=False)
+        self.conv1 = nn.Conv1d(in_channels, self.inplanes, kernel_size=first_layer_kernel_size, stride=2, padding=3, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 32, layers[0])
-        self.layer2 = self._make_layer(block, 32, layers[1], stride=2, dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, 64, layers[2], stride=2, dilate=replace_stride_with_dilation[1])
-        self.layer4 = self._make_layer(block, 64, layers[3], stride=2, dilate=replace_stride_with_dilation[2])
+        self.n_channels = [self.inplanes,int(self.inplanes*layer_size_multiplier[0]),int(self.inplanes*layer_size_multiplier[1]),int(self.inplanes*layer_size_multiplier[2]),int(self.inplanes*layer_size_multiplier[3])]
+        self.layer1 = self._make_layer(block, self.n_channels[1], layers[0])
+        self.layer2 = self._make_layer(block, self.n_channels[2], layers[1], stride=2, dilate=replace_stride_with_dilation[0])
+        self.layer3 = self._make_layer(block, self.n_channels[3], layers[2], stride=2, dilate=replace_stride_with_dilation[1])
+        self.layer4 = self._make_layer(block, self.n_channels[4], layers[3], stride=2, dilate=replace_stride_with_dilation[2])
         self.dropout = nn.Dropout(dropout)
         self.avgpool = nn.AdaptiveAvgPool1d((1))
-        self.fc = nn.Linear(64 * block.expansion, num_classes)  # Updated input size to match the output of layer4
+        self.fc = nn.Linear(self.n_channels[4], num_classes)  # Updated input size to match the output of layer4
 
         for m in self.modules():
             if isinstance(m, nn.Conv1d):

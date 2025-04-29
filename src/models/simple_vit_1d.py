@@ -99,7 +99,7 @@ class PatchEmbedding_Conv(nn.Module):
         return self.norm(x)
 
 
-def get_PatchEmbedding_Conv(patch_size, emb_dim,in_channels, **kwargs):
+def get_PatchEmbedding_Conv(patch_size, emb_dim,in_channels, overlap=0,**kwargs):
     stride= patch_size - overlap
     if stride <= 0:
         raise ValueError("Stride must be positive and less than patch size.")
