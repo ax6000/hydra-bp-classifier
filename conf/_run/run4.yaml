@@ -1,0 +1,29 @@
+# timesnet
+defaults:
+  - /model/timesnet
+  - /data/BPDataset
+  - /network/base_network
+  - _self_
+data:
+  train_dataset:
+    data_len: -1
+  val_dataset:
+    data_len: -1
+  test_dataset:
+    data_len: -1
+    
+network:
+  no_warning: False
+  no_torchinfo: False
+  batch_size: 64
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 1e-3
+    weight_decay: 0
+  scheduler:
+    _target_: transformers.optimization.get_cosine_schedule_with_warmup
+  ckpt_path: checkpoints/0514_timesnet
+  early_stopping: 
+    patience: 3
+  resume: false
+

@@ -111,8 +111,9 @@ class BP_Trainer(object):
             print(class_weights)
 
             self.model = instantiate(self._model)
-            if f == 0:
-                summary(self.model, input_size=(self.batch_size, 1, 1250), device=self.device.type)
+            if f == 0 and not self.config.network.no_torchinfo:
+                print("torchinfo input shape:",(self.batch_size, *train_dataset.x[0].shape))  
+                summary(self.model, input_size=(self.batch_size, *train_dataset.x[0].shape), device=self.device.type)
             self.optimizer = instantiate(self._optimizer,params=self.model.parameters())
             update_if_exists(self._scheduler,"num_training_steps",self.min_epochs * len(train_loader))
             update_if_exists(self._scheduler,"num_warmup_steps",self._scheduler.num_training_steps * 0.1)

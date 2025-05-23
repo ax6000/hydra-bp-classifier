@@ -1,0 +1,38 @@
+#  sweep best 
+defaults:
+  - /model/resnet18
+  - /data/BPDataset
+  - /network/base_network
+  - _self_
+data:
+  train_dataset:
+    _target_: src.dataset.BPDataset2D
+    data_len: 50000
+  val_dataset:
+    _target_: src.dataset.BPDataset2D
+    data_len: -1
+  test_dataset:
+    _target_: src.dataset.BPDataset2D
+    data_len: -1
+model:
+  _target_: src.models.resnet.resnet18
+  first_layer_kernel_size: 7
+  first_layer_channels: 32
+  layer_size_multiplier: [1,2,3,4]
+  num_classes: 2
+  in_channels: 1   
+network:
+  no_warning: False
+  no_torchinfo: False
+  batch_size: 32
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.001
+    weight_decay: 0
+  scheduler:
+    _target_: transformers.optimization.get_cosine_schedule_with_warmup
+  ckpt_path: checkpoints/resnet/0514_2d
+  early_stopping: 
+    patience: 3
+  resume: false
+

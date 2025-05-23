@@ -1,0 +1,25 @@
+_target_: src.models.timesnet.Model
+num_classes: 2
+configs:
+  task_name: classification
+  seq_len: 1250
+  num_kernels: 6
+
+  e_layers: 2
+
+  # encoder input size (shape of features)
+  enc_in: 1
+  d_model: 32 # or 128 or 1024
+  # dimension of fcn
+  d_ff: 32
+  num_class: ${..num_classes}
+  dropout: 0.1
+  # fftの振幅上位k個を通す
+  top_k: 5 
+  # don't use in classification task
+  pred_len: 0
+  label_len: 0
+  freq: s
+  # time features encoding, fixed for classification, options:[timeF, fixed, learned]
+  embed: fixed
+ 
