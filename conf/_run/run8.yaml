@@ -1,0 +1,43 @@
+# transfer learning
+defaults:
+  - /model/resnet18
+  - /data/BPDataset
+  - /network/base_network
+  - _self_
+data:
+  train_dataset:
+    _target_: src.dataset.BPDataset_4
+    data_len: -1
+  val_dataset:
+    _target_: src.dataset.BPDataset_4
+    data_len: -1
+  test_dataset:
+    _target_: src.dataset.BPDataset_4
+    data_len: -1
+model:
+  _target_: src.models.se_resnet1d.resnet18mini
+  first_layer_kernel_size: 11
+  first_layer_channels: 64
+  layer_size_multiplier: [1,2,2,4]
+  num_classes: 4
+  in_channels: 1   
+network:
+  no_warning: False
+  no_torchinfo: False
+  batch_size: 256
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 7.1e-6
+    weight_decay: 3.4e-4
+  scheduler:
+    _target_: transformers.optimization.get_cosine_schedule_with_warmup
+  ckpt_path: checkpoints/resnet/0527_4
+  early_stopping: 
+    patience: 5
+  resume:
+    enabled: false
+    ckpt_path:
+  transfer_learning: 
+    enabled: true
+    ckpt_path: checkpoints/resnet/0527_2
+    freeze_layers: ["conv1", "bn1", "layer1"]

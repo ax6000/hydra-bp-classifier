@@ -21,5 +21,11 @@ early_stopping:
   _target_: src.utils.EarlyStopping
   path: ${_run.network.ckpt_path}
   patience: 10
-resume: false
+resume:
+  enabled: false
+  ckpt_path:
+transfer_learning: 
+  enabled: false
+  ckpt_path: checkpoints/resnet/0527_2
+  freeze_layers: ["conv1", "bn1", "layer1", "layer2"]
 fold: 5

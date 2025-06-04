@@ -12,7 +12,7 @@ import wandb
 from sklearn.metrics import f1_score
 # from resnet1d import ResNet1D
 import pickle
-from ..utils import output_warning,compute_class_weights,EarlyStopping,update_if_exists
+from ..utils import output_warning,compute_class_weights,EarlyStopping,update_if_exists,freeze_model_layers
 from hydra.utils import instantiate,call
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
@@ -103,14 +103,25 @@ class BP_Trainer(object):
             for label, count in zip(unique, counts):
                 print(f"ラベル {label}: {count}件")
             # weight 
-            labels = np.load(f'{data_dir}/train_sbp_2labels.npy')
-            with open(f"{data_dir}/cv_5fold_2labels.pkl", "rb") as file:
-                cv_idx = pickle.load(file) 
-                labels = labels[cv_idx[0][f]]
+            labels = train_dataset.y
             class_weights = compute_class_weights(labels).to(self.device)
             print(class_weights)
 
             self.model = instantiate(self._model)
+            if self.config.network.resume.enabled:
+                self.model.load_state_dict(torch.load(f"{self.config.network.resume.ckpt_path}/best_fold{f}.pth"))
+            # transfer learning
+            if self.config.network.transfer_learning.enabled:
+                print(f"transfer learning: load checkpoints from {self.config.network.transfer_learning.ckpt_path}/best_fold{f}.pth")
+                print(f"transfer learning: frozen layers: {self.config.network.transfer_learning.freeze_layers}")
+                state_dict = torch.load(f"{self.config.network.transfer_learning.ckpt_path}/best_fold{f}.pth")
+                ignore_layers = ["fc"]
+                state_dict = {
+                    k: v for k, v in state_dict.items()
+                    if not any(k.startswith(layer_name) for layer_name in ignore_layers)
+                }
+                self.model.load_state_dict(state_dict, strict=False)
+                freeze_model_layers(self.model, self.config.network.transfer_learning.freeze_layers)
             if f == 0 and not self.config.network.no_torchinfo:
                 print("torchinfo input shape:",(self.batch_size, *train_dataset.x[0].shape))  
                 summary(self.model, input_size=(self.batch_size, *train_dataset.x[0].shape), device=self.device.type)
@@ -199,7 +210,7 @@ class BP_Trainer(object):
                     "val_loss": val_loss,
                     "accuracy": accuracy.item(),
                     "f1_macro": f1,
-                    "conf_mat": wandb.plot.confusion_matrix(y_true=all_y_true, preds=all_y_pred, class_names=["0","1"]),
+                    "conf_mat": wandb.plot.confusion_matrix(y_true=all_y_true, preds=all_y_pred),#, class_names=["0","1","2","3"]
                     "epoch": epoch + 1
                 },
                 step=step)

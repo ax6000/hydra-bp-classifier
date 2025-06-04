@@ -57,6 +57,59 @@ class BPDataset(Dataset):
     
     def __getitem__(self, idx):
         return self.x[idx], self.y[idx]
+class BPDataset_4(Dataset):
+    def __init__(self, data_dir,cv=False,fold=None,train=True,data_len=-1):
+        # Load data
+        if train:
+            if cv:
+                self.x = np.load(f'{data_dir}/train_4.npy').reshape(-1,1,1250)
+                self.y = np.load(f'{data_dir}/train_sbp_4labels.npy')
+                with open(f'{data_dir}/cv_5fold_4labels.pkl','rb') as f:
+                    file = pickle.load(f)
+                    self.x = self.x[file[0][fold]]
+                    self.y = self.y[file[0][fold]]
+                # with open(f'{data_dir}/ppgidx_2labels_cv.pkl','rb') as f:
+                #     ppgidx_2labels_cv = pickle.load(f)
+                # self.x = self.x[ppgidx_2labels_cv[0][fold]]
+                # with open(f'{data_dir}/sbp_2labels_cv.pkl','rb') as f:
+                #     sbp_4labels_cv = pickle.load(f)
+            else:
+                self.x = np.load(f'{data_dir}/train_4.npy').reshape(-1,1,1250)  # Shape: (-1, 1250)
+                self.y = np.load(f'{data_dir}/train_sbp_4labels.npy')  # Shape: (-1,)
+            print(self.x.shape,self.y.shape)
+            # self.x = np.load(f'{data_dir}/train_2.npy')[:, 1, :].reshape(-1,1,1250)  # Shape: (-1, 1250)
+            # self.y = np.load(f'{data_dir}/train_sbp_2labels.npy')  # Shape: (-1,)
+        else:
+            if cv:
+                self.x = np.load(f'{data_dir}/train_4.npy').reshape(-1,1,1250) # Shape: (-1, 1250)
+                self.y = np.load(f'{data_dir}/train_sbp_4labels.npy')
+                with open(f'{data_dir}/cv_5fold_4labels.pkl','rb') as f:
+                    file = pickle.load(f)
+                    self.x = self.x[file[1][fold]]
+                    self.y = self.y[file[1][fold]]
+                # with open(f'{data_dir}/ppgidx_2labels_cv.pkl','rb') as f:
+                #     ppgidx_2labels_cv = pickle.load(f)
+                # self.x = self.x[ppgidx_2labels_cv[1][fold]]
+                # with open(f'{data_dir}/sbp_2labels_cv.pkl','rb') as f:
+                #     sbp_4labels_cv = pickle.load(f)
+                # self.y = sbp_4labels_cv[1][fold]  # Shape: (-1,)
+            else:
+                self.x = np.load(f'{data_dir}/test_4.npy').reshape(-1,1,1250)  # Shape: (-1, 1250)
+                self.y = np.load(f'{data_dir}/test_sbp_4labels.npy')  # Shape: (-1,)
+            # self.x = np.load(f'{data_dir}/test_2.npy')[:, 1, :].reshape(-1,1,1250)  # Shape: (-1, 1250)
+            # self.y = np.load(f'{data_dir}/test_sbp_2labels.npy')  # Shape: (-1,)
+        # Convert to torch tensors
+        if data_len != -1:
+            self.x = self.x[:min(data_len,len(self.x))]
+            self.y = self.y[:min(data_len,len(self.y))]
+        self.x = torch.FloatTensor(self.x)
+        self.y = torch.LongTensor(self.y)
+        print(self.x.shape,self.y.shape)
+    def __len__(self):
+        return len(self.y)
+    
+    def __getitem__(self, idx):
+        return self.x[idx], self.y[idx]
     
 class BPDataset_Regr(Dataset):
     def __init__(self, data_dir,cv=None,train=True):

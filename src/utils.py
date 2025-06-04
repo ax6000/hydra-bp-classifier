@@ -5,7 +5,8 @@ import torch
 from omegaconf import OmegaConf
 import random
 import threading
-
+import torch.nn as nn
+from typing import List
 def torch_fix_seed(seed: int = 42) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -87,6 +88,15 @@ def compute_class_weights(labels):
     weights = total_samples / (len(unique) * counts)
     return torch.FloatTensor(weights)
 
+def freeze_model_layers(model: nn.Module, freeze_layers: List[str]):
+    for layer_name in freeze_layers:
+        layer = getattr(model, layer_name, None)
+        if layer is not None:
+            for param in layer.parameters():
+                param.requires_grad = False
+        else:
+            print(f"Warning: Layer '{layer_name}' not found in the model.")
+
 class EarlyStopping:
     """earlystoppingクラス"""
 
@@ -129,3 +139,5 @@ class EarlyStopping:
             print(f'Validation loss decreased ({self.best_score:.5f} --> {score:.5f}).  Saving model ...')
         torch.save(model.state_dict(), self.path)  #ベストモデルを指定したpathに保存
         self.best_score = score #その時のlossを記録する
+
+    
